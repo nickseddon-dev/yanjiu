@@ -1,6 +1,18 @@
 version: "3.8"
 
+networks:
+  quant-os-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  prefect_data:
+  prometheus_data:
+  grafana_data:
+
 services:
+  # ==================== INFRASTRUCTURE ====================
   postgres:
     image: postgres:15-alpine
     environment:
@@ -11,6 +23,14 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - quant-os-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quantos -d quantos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -19,6 +39,14 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    networks:
+      - quant-os-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   prefect:
     image: prefecthq/prefect:3-python3.11
@@ -29,6 +57,14 @@ services:
       PREFECT_API_KEY: ${PREFECT_API_KEY:-}
     volumes:
       - prefect_data:/var/lib/prefect
+    networks:
+      - quant-os-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4200/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:v2.45.0
@@ -37,20 +73,430 @@ services:
     volumes:
       - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
+    networks:
+      - quant-os-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:10.0.0
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infra/monitoring:/etc/grafana/provisioning
+    networks:
+      - quant-os-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
 
-volumes:
-  postgres_data:
-  redis_data:
-  prefect_data:
-  prometheus_data:
-  grafana_data:
+  # ==================== SERVICES ====================
+
+  data_gateway:
+    build:
+      context: .
+      dockerfile: services/data_gateway/Dockerfile
+    ports:
+      - "8091:8091"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8091/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  event_gateway:
+    build:
+      context: .
+      dockerfile: services/event_gateway/Dockerfile
+    ports:
+      - "8092:8092"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8092/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  signal_publisher:
+    build:
+      context: .
+      dockerfile: services/signal_publisher/Dockerfile
+    ports:
+      - "8093:8093"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+      SIGNAL_BRIDGE_URL: http://signal_bridge:8090
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      signal_bridge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8093/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  feature_service:
+    build:
+      context: .
+      dockerfile: services/feature_service/Dockerfile
+    ports:
+      - "8094:8094"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8094/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: services/orchestrator/Dockerfile
+    ports:
+      - "8095:8095"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8095/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  risk_control:
+    build:
+      context: .
+      dockerfile: services/risk_control/Dockerfile
+    ports:
+      - "8096:8096"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  execution_control:
+    build:
+      context: .
+      dockerfile: services/execution_control/Dockerfile
+    ports:
+      - "8097:8097"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+      risk_control:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8097/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  report_generator:
+    build:
+      context: .
+      dockerfile: services/report_generator/Dockerfile
+    ports:
+      - "8098:8098"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8098/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  signal_bridge:
+    build:
+      context: .
+      dockerfile: services/signal_bridge/Dockerfile
+    ports:
+      - "8090:8090"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  research_runner:
+    build:
+      context: .
+      dockerfile: services/research_runner/Dockerfile
+    ports:
+      - "8099:8099"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PREFECT_API_URL: http://prefect:4200/api
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8099/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # ==================== APPS ====================
+
+  ops_dashboard:
+    build:
+      context: .
+      dockerfile: apps/ops_dashboard/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    networks:
+      - quant-os-net
+    depends_on:
+      data_gateway:
+        condition: service_healthy
+      event_gateway:
+        condition: service_healthy
+      signal_publisher:
+        condition: service_healthy
+      feature_service:
+        condition: service_healthy
+      orchestrator:
+        condition: service_healthy
+      risk_control:
+        condition: service_healthy
+      execution_control:
+        condition: service_healthy
+      report_generator:
+        condition: service_healthy
+      signal_bridge:
+        condition: service_healthy
+      research_runner:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  analytics:
+    build:
+      context: .
+      dockerfile: apps/analytics/Dockerfile
+    ports:
+      - "3010:3010"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: quantos
+      POSTGRES_USER: quantos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quantos_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    networks:
+      - quant-os-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3010/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped

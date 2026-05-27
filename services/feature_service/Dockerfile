@@ -11,6 +11,8 @@ COPY packages/cost_models /packages/cost_models
 COPY packages/adapters /packages/adapters
 COPY services/feature_service /app
 
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir -e /packages/common_schema \
     -e /packages/event_schema \
     -e /packages/feature_registry \
