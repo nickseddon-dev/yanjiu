@@ -1,26 +1,25 @@
+
 # qlib_ext
 
-## Fork Instructions
+Fork of Qlib with custom quant feature extensions.
 
-This directory is reserved for the qlib ext fork.
+## Setup
 
-### To initialize:
 ```bash
-git clone <upstream_url> qlib_ext
+git clone https://github.com/microsoft/qlib.git qlib_ext
 cd qlib_ext
 git remote rename origin upstream
-git checkout -b upstream/main upstream/main
+git checkout -b upstream-main upstream/main
 ```
 
-### To sync upstream changes:
-```bash
-cd qlib_ext
-git fetch upstream
-git rebase upstream/main
-```
+## Custom Extensions
 
-### Rules:
-- **NEVER** modify upstream core logic directly
-- All extensions go in `adapters/`, `risk/`, `replay/` directories
-- Keep `upstream/main` as tracking branch
-- Monthly sync recommended
+- `quant_features/` - Custom social sentiment features
+- `backtest/signal_backtest.py` - Signal-driven backtesting engine
+
+## Integration
+
+qlib_ext is used by the research_runner service for:
+- Historical factor computation
+- Alpha discovery
+- Backtesting against historical signals

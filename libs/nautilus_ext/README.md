@@ -1,26 +1,24 @@
+
 # nautilus_ext
 
-## Fork Instructions
+Fork of NautilusTrader with custom signal adapter extensions.
 
-This directory is reserved for the nautilus ext fork.
+## Setup
 
-### To initialize:
 ```bash
-git clone <upstream_url> nautilus_ext
+git clone https://github.com.nautechsystems/nautilus_trader.git nautilus_ext
 cd nautilus_ext
 git remote rename origin upstream
-git checkout -b upstream/main upstream/main
+git checkout -b upstream-main upstream/main
 ```
 
-### To sync upstream changes:
-```bash
-cd nautilus_ext
-git fetch upstream
-git rebase upstream/main
-```
+## Custom Extensions
 
-### Rules:
-- **NEVER** modify upstream core logic directly
-- All extensions go in `adapters/`, `risk/`, `replay/` directories
-- Keep `upstream/main` as tracking branch
-- Monthly sync recommended
+- `adapters/signal_adapter.py` - SignalConsumer for signal-driven order execution
+- `risk/signal_risk.py` - Risk rules specific to signal-driven trading
+- `replay/signal_replay.py` - Historical signal replay for backtesting
+
+## Integration
+
+The SignalConsumer in `adapters/signal_adapter.py` receives signals from the
+research host's SignalBridge via HTTP POST to the live host's admin endpoint.
