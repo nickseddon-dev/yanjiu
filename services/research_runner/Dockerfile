@@ -21,6 +21,6 @@ RUN pip install --no-cache-dir -e /packages/common_schema \
     -e /packages/cost_models \
     -e /packages/adapters
 
-RUN pip install --no-cache-dir prefect fastapi uvicorn
+RUN pip install --no-cache-dir prefect fastapi uvicorn httpx aiohttp numpy redis pandas
 
 CMD ["python", "-m", "research_runner.main"]
