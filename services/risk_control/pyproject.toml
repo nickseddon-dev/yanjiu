@@ -1,0 +1,20 @@
+[project]
+name = "quant-os-risk_control"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "common_schema",
+    "event_schema",
+    "feature_registry",
+    "model_registry",
+    "risk_rules",
+    "cost_models",
+    "adapters",
+    "prefect>=3.0",
+    "fastapi>=0.100",
+    "uvicorn",
+]
+
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"

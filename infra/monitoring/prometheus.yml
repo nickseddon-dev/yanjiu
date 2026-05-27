@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "data_gateway"
+    static_configs:
+      - targets: ["data_gateway:8001"]
+
+  - job_name: "event_gateway"
+    static_configs:
+      - targets: ["event_gateway:8002"]
+
+  - job_name: "feature_service"
+    static_configs:
+      - targets: ["feature_service:8003"]

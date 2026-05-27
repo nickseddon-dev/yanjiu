@@ -1,0 +1,9 @@
+[project]
+name = "common_schema"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.0", "numpy>=1.26", "pandas>=2.0"]
+
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
