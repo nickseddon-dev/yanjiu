@@ -1,0 +1,92 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_TAG: ${{ github.ref_name }}
+
+jobs:
+  docker-build:
+    name: Build and Push (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - data_gateway
+          - event_gateway
+          - signal_publisher
+          - feature_service
+          - orchestrator
+          - risk_control
+          - execution_control
+          - report_generator
+          - signal_bridge
+          - research_runner
+          - ops_dashboard
+          - analytics
+        include:
+          - service_path: services/data_gateway
+          - service_path: services/event_gateway
+          - service_path: services/signal_publisher
+          - service_path: services/feature_service
+          - service_path: services/orchestrator
+          - service_path: services/risk_control
+          - service_path: services/execution_control
+          - service_path: services/report_generator
+          - service_path: services/signal_bridge
+          - service_path: services/research_runner
+          - service_path: apps/ops_dashboard
+          - service_path: apps/analytics
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha,prefix=
+
+      - name: Determine Dockerfile path
+        id: dockerfile
+        run: |
+          if [ -f "${{ matrix.service_path }}/Dockerfile" ]; then
+            echo "path=${{ matrix.service_path }}/Dockerfile" >> $GITHUB_OUTPUT
+          else
+            echo "path=Dockerfile" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ steps.dockerfile.outputs.path }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64

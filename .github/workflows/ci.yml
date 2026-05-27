@@ -2,38 +2,103 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, master, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [main, master, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - run: pip install ruff
-      - run: ruff check packages/
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r .github/workflows/requirements.txt
+
+      - name: Run ruff check
+        run: ruff check services/ packages/ libs/ apps/
+
+      - name: Check ruff format
+        run: ruff format --check services/ packages/ libs/ apps/
 
   typecheck:
+    name: Type Check
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install mypy
-      - run: mypy packages/
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - run: pip install -e packages/common_schema -e packages/event_schema -e packages/feature_registry -e packages/model_registry -e packages/risk_rules -e packages/cost_models -e packages/adapters
-      - run: pip install pytest
-      - run: pytest packages/ -v
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -r .github/workflows/requirements.txt
+
+      - name: Run mypy
+        run: mypy packages/ libs/
+
+  test-services:
+    name: Test Services (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -r .github/workflows/requirements.txt
+
+      - name: Install packages
+        run: |
+          pip install -e packages/common_schema -e packages/event_schema \
+            -e packages/feature_registry -e packages/model_registry \
+            -e packages/risk_rules -e packages/cost_models -e packages/adapters
+
+      - name: Run pytest with coverage
+        run: |
+          pytest packages/ services/ \
+            --cov=packages --cov=services \
+            --cov-report=xml --cov-report=term-missing \
+            -v --tb=short
+
+  test-libs:
+    name: Test Libs (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -r .github/workflows/requirements.txt
+
+      - name: Install libs
+        run: pip install -e libs/nautilus_ext -e libs/qlib_ext
+
+      - name: Run pytest
+        run: pytest libs/ -v --tb=short

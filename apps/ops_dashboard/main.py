@@ -4,15 +4,22 @@ import logging
 import httpx
 from datetime import datetime, timezone
 from typing import Optional
+from pathlib import Path
 
 import pydantic
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 logger = logging.getLogger("ops_dashboard")
 
 app = FastAPI(title="quant-os Ops Dashboard", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+# Mount static files
+static_path = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
 SERVICE_ENDPOINTS = {
     "data_gateway": "http://localhost:8091",
@@ -24,6 +31,7 @@ SERVICE_ENDPOINTS = {
     "execution_control": "http://localhost:8097",
     "report_generator": "http://localhost:8098",
     "signal_bridge": "http://localhost:8090",
+    "research_runner": "http://localhost:8099",
 }
 
 
@@ -57,13 +65,10 @@ async def check_service(name: str, url: str) -> ServiceHealth:
         return ServiceHealth(name=name, url=url, status="unreachable", error=str(e)[:80])
 
 
-@app.get("/", response_model=dict)
+@app.get("/", response_class=FileResponse)
 async def root():
-    return {
-        "name": "quant-os Ops Dashboard",
-        "version": "0.1.0",
-        "services": list(SERVICE_ENDPOINTS.keys()),
-    }
+    static_index = Path(__file__).parent / "static" / "index.html"
+    return FileResponse(str(static_index))
 
 
 @app.get("/health", response_model=DashboardState)

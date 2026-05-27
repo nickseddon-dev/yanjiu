@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>quant-os Ops Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="dashboard">
+    <header class="header">
+      <div class="header-content">
+        <div class="header-left">
+          <div class="logo">◈</div>
+          <h1 class="title">quant-os <span>Ops Dashboard</span></h1>
+        </div>
+        <div class="header-right">
+          <div class="refresh-indicator">
+            <span class="refresh-dot" id="refreshDot"></span>
+            <span id="refreshStatus">Initializing...</span>
+          </div>
+          <div class="last-updated">
+            Last refresh: <span id="lastUpdated">--:--:--</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Service Health Grid -->
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title">Service Health</h2>
+          <div class="health-summary">
+            <span class="badge badge-healthy" id="healthyCount">0</span>
+            <span class="badge badge-unhealthy" id="unhealthyCount">0</span>
+          </div>
+        </div>
+        <div class="services-grid" id="servicesGrid">
+          <!-- Services injected by JS -->
+        </div>
+      </section>
+
+      <!-- Risk State Panel -->
+      <section class="section section-half">
+        <div class="section-header">
+          <h2 class="section-title">Risk State</h2>
+        </div>
+        <div class="risk-panel">
+          <div class="risk-card kill-switch-card" id="killSwitchCard">
+            <div class="risk-card-header">
+              <span class="risk-label">Kill Switch</span>
+              <span class="risk-indicator" id="killSwitchIndicator">--</span>
+            </div>
+            <div class="risk-card-body">
+              <div class="risk-value" id="killSwitchValue">Loading...</div>
+              <div class="risk-meta" id="killSwitchMeta"></div>
+            </div>
+          </div>
+          <div class="risk-card exposure-card" id="exposureCard">
+            <div class="risk-card-header">
+              <span class="risk-label">Exposure</span>
+              <span class="risk-indicator" id="exposureIndicator">--</span>
+            </div>
+            <div class="risk-card-body">
+              <div class="risk-value" id="exposureValue">Loading...</div>
+              <div class="risk-meta" id="exposureMeta"></div>
+            </div>
+          </div>
+          <div class="risk-card state-card" id="riskStateCard">
+            <div class="risk-card-header">
+              <span class="risk-label">Risk State</span>
+              <span class="risk-indicator" id="riskStateIndicator">--</span>
+            </div>
+            <div class="risk-card-body">
+              <div class="risk-value" id="riskStateValue">Loading...</div>
+              <div class="risk-meta" id="riskStateMeta"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Signal Monitor -->
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title">Signal Monitor</h2>
+          <div class="signal-count">
+            <span id="signalCount">0</span> signals
+          </div>
+        </div>
+        <div class="signals-table-wrapper">
+          <table class="signals-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Symbol</th>
+                <th>Signal</th>
+                <th>Strength</th>
+                <th>Source</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="signalsBody">
+              <!-- Signals injected by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

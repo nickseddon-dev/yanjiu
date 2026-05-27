@@ -1,0 +1,600 @@
+/* ========================================
+   quant-os Ops Dashboard Styles
+   ======================================== */
+
+:root {
+  --bg-primary: #0f1117;
+  --bg-card: #1a1d27;
+  --bg-card-hover: #22263a;
+  --accent: #00d4ff;
+  --accent-dim: rgba(0, 212, 255, 0.15);
+  --green: #22c55e;
+  --green-dim: rgba(34, 197, 94, 0.15);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.15);
+  --yellow: #eab308;
+  --yellow-dim: rgba(234, 179, 8, 0.15);
+  --text-primary: #f0f0f0;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --border: #2d3348;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ========================================
+   Layout
+   ======================================== */
+
+.dashboard {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--bg-card) 0%, #141724 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+.header-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  font-size: 1.8rem;
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.title span {
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.refresh-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.refresh-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--yellow);
+  animation: blink 1s ease-in-out infinite;
+}
+
+.refresh-dot.active {
+  background-color: var(--green);
+  animation: none;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.last-updated {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ========================================
+   Main Content
+   ======================================== */
+
+.main {
+  flex: 1;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.section {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.section-half {
+  flex: 0 0 auto;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  background: linear-gradient(180deg, var(--accent) 0%, transparent 100%);
+  border-radius: 2px;
+}
+
+.health-summary {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-healthy {
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-unhealthy {
+  background: var(--red-dim);
+  color: var(--red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ========================================
+   Services Grid
+   ======================================== */
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.service-card {
+  background: linear-gradient(145deg, var(--bg-card-hover) 0%, var(--bg-card) 100%);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.service-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent);
+}
+
+.service-card.healthy {
+  border-left: 3px solid var(--green);
+}
+
+.service-card.degraded {
+  border-left: 3px solid var(--yellow);
+}
+
+.service-card.unreachable {
+  border-left: 3px solid var(--red);
+}
+
+.service-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.service-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.service-status {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.service-status.healthy {
+  background-color: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+.service-status.degraded {
+  background-color: var(--yellow);
+  box-shadow: 0 0 8px var(--yellow);
+}
+
+.service-status.unreachable {
+  background-color: var(--red);
+  box-shadow: 0 0 8px var(--red);
+  animation: pulse-red 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 8px var(--red); }
+  50% { box-shadow: 0 0 15px var(--red); }
+}
+
+.service-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.service-latency {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.service-error {
+  font-size: 0.7rem;
+  color: var(--red);
+  margin-top: 0.25rem;
+  word-break: break-word;
+}
+
+/* ========================================
+   Risk Panel
+   ======================================== */
+
+.risk-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.risk-card {
+  background: linear-gradient(145deg, var(--bg-card-hover) 0%, var(--bg-card) 100%);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.risk-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.risk-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.risk-indicator {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.risk-indicator.healthy {
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.risk-indicator.warning {
+  background: var(--yellow-dim);
+  color: var(--yellow);
+}
+
+.risk-indicator.danger {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.risk-indicator.unknown {
+  background: rgba(107, 114, 128, 0.2);
+  color: var(--text-muted);
+}
+
+.risk-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.risk-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.kill-switch-card.active {
+  border-color: var(--red);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+.kill-switch-card.active .risk-value {
+  color: var(--red);
+}
+
+/* ========================================
+   Signals Table
+   ======================================== */
+
+.signal-count {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.signal-count span {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.signals-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.signals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.signals-table thead {
+  background: linear-gradient(135deg, var(--bg-card-hover) 0%, var(--bg-card) 100%);
+  position: sticky;
+  top: 0;
+}
+
+.signals-table th {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.signals-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.signals-table tbody tr:hover {
+  background-color: var(--bg-card-hover);
+}
+
+.signals-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.signals-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.signal-timestamp {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.signal-symbol {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.signal-value {
+  font-weight: 600;
+}
+
+.signal-value.positive {
+  color: var(--green);
+}
+
+.signal-value.negative {
+  color: var(--red);
+}
+
+.signal-strength {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.strength-bar {
+  width: 40px;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.strength-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.strength-fill.high {
+  background: var(--green);
+}
+
+.strength-fill.medium {
+  background: var(--yellow);
+}
+
+.strength-fill.low {
+  background: var(--text-muted);
+}
+
+.signal-source {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.signal-status {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.signal-status.active {
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.signal-status.pending {
+  background: var(--yellow-dim);
+  color: var(--yellow);
+}
+
+.signal-status.rejected {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.signal-status.expired {
+  background: rgba(107, 114, 128, 0.2);
+  color: var(--text-muted);
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.service-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+
+@media (max-width: 768px) {
+  .header {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.1rem;
+  }
+
+  .header-right {
+    gap: 1rem;
+  }
+
+  .main {
+    padding: 1rem;
+  }
+
+  .services-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .risk-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
+   Scrollbar
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

@@ -26,6 +26,29 @@ class SignalOrder:
     received_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# Re-export from submodules for public API
+from libs.nautilus_ext.adapters.order_adapter import (
+    OrderExecutionAdapter,
+    OrderResult,
+    OrderStatus,
+)
+from libs.nautilus_ext.execution_serializer import (
+    ExecutionSerializer,
+    OrderSide,
+    OrderType,
+    NautilusOrderSpec,
+)
+from libs.nautilus_ext.position_tracker import (
+    PositionTracker,
+    Position,
+    PortfolioSummary,
+)
+from libs.nautilus_ext.risk_checker import (
+    RiskChecker,
+    RiskCheckResponse,
+)
+
+
 class SignalConsumer:
     """
     Consumes signals from SignalBridge (research host) and executes via NautilusTrader.
