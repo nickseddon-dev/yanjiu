@@ -425,6 +425,32 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  executor:
+    build:
+      context: .
+      dockerfile: services/executor/Dockerfile
+    ports:
+      - "8100:8100"
+    environment:
+      REDIS_URL: redis://redis:6379
+      SIGNAL_BRIDGE_URL: http://signal_bridge:8090
+      EXECUTION_MODE: ${EXECUTION_MODE:-PAPER}
+      TRADING_SYMBOLS: ${TRADING_SYMBOLS:-BTC/USDT,ETH/USDT}
+    networks:
+      - quant-os-net
+    depends_on:
+      redis:
+        condition: service_healthy
+      signal_bridge:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8100/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
   # ==================== APPS ====================
 
   ops_dashboard:
@@ -463,6 +489,8 @@ services:
       signal_bridge:
         condition: service_healthy
       research_runner:
+        condition: service_healthy
+      executor:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
